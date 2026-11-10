@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "UMUNARA"
+description = "A Rwanda-focused homepage for discovering events, weddings, jobs, market listings, and community."
+version = "1.0.0"
+id = "artifacts/umunara"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24677
+
+[services.development]
+run = "pnpm --filter @workspace/umunara run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/umunara", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/umunara/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24677"
+BASE_PATH = "/"
