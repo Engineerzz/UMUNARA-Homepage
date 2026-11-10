@@ -3,13 +3,21 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: UMUNARA telecom safety platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: Auth
+    description: Browser authentication operations.
+  - name: Safety
+    description: Community reports, phone checks, and transfer information.
+  - name: Admin
+    description: Moderation and platform management.
+  - name: Storage
+    description: Private proof uploads and object serving.
 paths:
   /healthz:
     get:
@@ -24,7 +32,465 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the current authenticated user
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationSessionHeader"
+        - $ref: "#/components/parameters/SessionCookie"
+      responses:
+        "200":
+          description: Current authentication state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserEnvelope"
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Begin browser login
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to the authentication provider.
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete browser login
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        "302":
+          description: Redirect back to the app.
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: End browser login session
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationSessionHeader"
+        - $ref: "#/components/parameters/SessionCookie"
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+            default: /
+      responses:
+        "302":
+          description: Clear the session and redirect.
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileTokenExchangeRequest"
+      responses:
+        "200":
+          description: Session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileTokenExchangeSuccess"
+        "400":
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Token did not contain usable claims.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: Token exchange failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationSessionHeader"
+      responses:
+        "200":
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutSuccess"
+  /safety/check:
+    post:
+      tags: [Safety]
+      operationId: checkPhoneNumber
+      summary: Check a number against approved community reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneCheckInput"
+      responses:
+        "200":
+          description: A cautious community-report lookup result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneCheckResult"
+        "400":
+          description: Invalid phone number.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /safety/bulk-check:
+    post:
+      tags: [Safety]
+      operationId: bulkCheckPhoneNumbers
+      summary: Check multiple numbers against approved reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkPhoneCheckInput"
+      responses:
+        "200":
+          description: Results for the submitted phone numbers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkPhoneCheckResponse"
+        "400":
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /safety/reports:
+    get:
+      tags: [Safety]
+      operationId: listRecentReports
+      summary: List recently approved community reports
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+      responses:
+        "200":
+          description: Public approved report summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicReport"
+    post:
+      tags: [Safety]
+      operationId: submitSafetyReport
+      summary: Submit a community scam report for review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafetyReportInput"
+      responses:
+        "201":
+          description: Report received for moderation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetyReportSubmission"
+        "400":
+          description: Invalid report details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /safety/providers:
+    get:
+      tags: [Safety]
+      operationId: listTransferProviders
+      summary: List verified transfer provider information
+      responses:
+        "200":
+          description: Provider details with verification status.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferProvider"
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a private proof upload URL
+      description: Requires sign-in. The file is uploaded directly to object storage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "401":
+          description: Sign-in required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve a private object to an authorized administrator
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Sign-in required.
+        "403":
+          description: Access denied.
+  /admin/summary:
+    get:
+      tags: [Admin]
+      operationId: getAdminSummary
+      summary: Get moderation and number-check totals
+      responses:
+        "200":
+          description: Admin dashboard summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
+        "401":
+          description: Sign-in required.
+        "403":
+          description: Administrator access required.
+  /admin/reports:
+    get:
+      tags: [Admin]
+      operationId: listAdminReports
+      summary: List reports for moderation
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ReportStatus"
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: Filtered report records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminReport"
+        "401":
+          description: Sign-in required.
+        "403":
+          description: Administrator access required.
+  /admin/reports/{reportId}:
+    patch:
+      tags: [Admin]
+      operationId: updateReportStatus
+      summary: Moderate or soft-delete a report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportStatusUpdate"
+      responses:
+        "200":
+          description: Updated report.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminReport"
+        "401":
+          description: Sign-in required.
+        "403":
+          description: Administrator access required.
+        "404":
+          description: Report not found.
+  /admin/users:
+    get:
+      tags: [Admin]
+      operationId: listAdminUsers
+      summary: List registered users
+      responses:
+        "200":
+          description: Registered user summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Sign-in required.
+        "403":
+          description: Administrator access required.
+  /admin/providers:
+    get:
+      tags: [Admin]
+      operationId: listAdminProviders
+      summary: List all provider records for management
+      responses:
+        "200":
+          description: Provider records, including unpublished records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferProvider"
+    post:
+      tags: [Admin]
+      operationId: createTransferProvider
+      summary: Add a provider with source information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferProviderInput"
+      responses:
+        "201":
+          description: Provider added.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferProvider"
+  /admin/providers/{providerId}:
+    patch:
+      tags: [Admin]
+      operationId: updateTransferProvider
+      summary: Update a provider record
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferProviderUpdate"
+      responses:
+        "200":
+          description: Updated provider.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferProvider"
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +499,347 @@ components:
           type: string
       required:
         - status
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+          format: email
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+      required: [id, email, firstName, lastName, profileImageUrl]
+    AuthUserEnvelope:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/AuthUser"
+            - type: "null"
+      required: [user]
+    MobileTokenExchangeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+          format: uri
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+      required: [code, code_verifier, redirect_uri, state]
+    MobileTokenExchangeSuccess:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+    LogoutSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          const: true
+      required: [success]
+    ReportCategory:
+      type: string
+      enum:
+        - momo_scam
+        - airtel_money_scam
+        - bank_scam
+        - fake_job
+        - fake_lottery
+        - other
+    ReportStatus:
+      type: string
+      enum: [pending, approved, stopped, cleaned, deleted]
+    ReportStatusUpdate:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+      required: [status]
+    PhoneCheckInput:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 6
+          maxLength: 32
+      required: [phoneNumber]
+    PhoneCheckResult:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        classification:
+          type: string
+          enum: [no_reports, reported_scam]
+        reportCount:
+          type: integer
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportCategory"
+        explanation:
+          type: string
+      required: [phoneNumber, classification, reportCount, categories, explanation]
+    BulkPhoneCheckInput:
+      type: object
+      properties:
+        phoneNumbers:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: string
+            minLength: 6
+            maxLength: 32
+      required: [phoneNumbers]
+    BulkPhoneCheckResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhoneCheckResult"
+      required: [results]
+    SafetyReportInput:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 6
+          maxLength: 32
+        category:
+          $ref: "#/components/schemas/ReportCategory"
+        description:
+          type: string
+          minLength: 10
+          maxLength: 3000
+        evidenceObjectPath:
+          type: ["string", "null"]
+          maxLength: 500
+        reporterPhone:
+          type: ["string", "null"]
+          maxLength: 32
+      required: [phoneNumber, category, description]
+    SafetyReportSubmission:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        message:
+          type: string
+      required: [id, status, message]
+    PublicReport:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        category:
+          $ref: "#/components/schemas/ReportCategory"
+        reportCount:
+          type: integer
+        latestReportedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [reported_scam]
+      required: [phoneNumber, category, reportCount, latestReportedAt, status]
+    AdminReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        phoneNumber:
+          type: string
+        category:
+          $ref: "#/components/schemas/ReportCategory"
+        description:
+          type: string
+        evidenceObjectPath:
+          type: ["string", "null"]
+        reporterPhone:
+          type: ["string", "null"]
+        reporterEmail:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, phoneNumber, category, description, evidenceObjectPath, reporterPhone, reporterEmail, status, createdAt]
+    AdminSummary:
+      type: object
+      properties:
+        totalReports:
+          type: integer
+        pendingReports:
+          type: integer
+        approvedReports:
+          type: integer
+        reportedNumbers:
+          type: integer
+        numberChecks:
+          type: integer
+        registeredUsers:
+          type: integer
+      required: [totalReports, pendingReports, approvedReports, reportedNumbers, numberChecks, registeredUsers]
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+          format: email
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, firstName, lastName, createdAt]
+    TransferProvider:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logoText:
+          type: string
+        worksWithMomo:
+          type: boolean
+        worksWithAirtel:
+          type: boolean
+        worksWithBanks:
+          type: boolean
+        feeInformation:
+          type: ["string", "null"]
+        speedInformation:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        published:
+          type: boolean
+      required: [id, name, logoText, worksWithMomo, worksWithAirtel, worksWithBanks, feeInformation, speedInformation, sourceUrl, verifiedAt, published]
+    TransferProviderInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        logoText:
+          type: string
+          minLength: 1
+          maxLength: 30
+        worksWithMomo:
+          type: boolean
+        worksWithAirtel:
+          type: boolean
+        worksWithBanks:
+          type: boolean
+        feeInformation:
+          type: ["string", "null"]
+          maxLength: 500
+        speedInformation:
+          type: ["string", "null"]
+          maxLength: 300
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        published:
+          type: boolean
+      required: [name, logoText, worksWithMomo, worksWithAirtel, worksWithBanks, feeInformation, speedInformation, sourceUrl, verifiedAt, published]
+    TransferProviderUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        logoText:
+          type: string
+          minLength: 1
+          maxLength: 30
+        worksWithMomo:
+          type: boolean
+        worksWithAirtel:
+          type: boolean
+        worksWithBanks:
+          type: boolean
+        feeInformation:
+          type: ["string", "null"]
+          maxLength: 500
+        speedInformation:
+          type: ["string", "null"]
+          maxLength: 300
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+        verifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        published:
+          type: boolean
+    UploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+      required: [name, size, contentType]
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/UploadUrlRequest"
+      required: [uploadURL, objectPath]
 
