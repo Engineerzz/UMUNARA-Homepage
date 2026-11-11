@@ -9,7 +9,6 @@ import {
   useListAdminReports,
   useListAdminUsers,
   useListRecentReports,
-  useListTransferProviders,
   useRequestUploadUrl,
   useSubmitSafetyReport,
   useUpdateReportStatus,
@@ -30,6 +29,7 @@ import { useAuth } from '@workspace/replit-auth-web';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { transferGuide } from '@/data/transfer-guide';
 import {
   ArrowRight, CircleAlert, FileCheck2, FileImage, Globe2, LockKeyhole,
   Menu, Search, ShieldCheck, Signal, Upload, X,
@@ -60,9 +60,10 @@ const copy = {
     tipTwoTitle: 'Keep your PIN private', tipTwo: 'A real provider will never ask you to share your Mobile Money PIN or one-time code.',
     tipThreeTitle: 'Slow down urgency', tipThree: 'Pressure to act immediately is a reason to pause and check independently.',
     tipFourTitle: 'Check the recipient', tipFour: 'Confirm the name and number on the transfer screen before approving.',
-    providerTitle: 'Transfer provider directory', providerLead: 'Compare available ways to move money. Fee and speed details remain unverified unless a source is shown.',
+    providerTitle: 'Money transfer guide', providerLead: 'Practical steps for common services. Availability, fees, exchange rates, and delivery times depend on your route; check the provider’s live quote.',
     worksWith: 'Works with', momo: 'MoMo', airtel: 'Airtel Money', banks: 'Banks', fee: 'Fees', speed: 'Speed',
     unverified: 'Unverified — no source listed', verified: 'Source provided', noProviders: 'No providers are listed yet.',
+    stepsLabel: 'Steps', deliveryLabel: 'Delivery time', warningLabel: 'Scam warning', officialSite: 'Official website', availabilityNote: 'UMUNARA does not set transfer prices. Always check the current fee, exchange rate, payout options, and estimated delivery time in the provider’s official app or website before sending.',
     reportTitle: 'Tell us what happened', reportLead: 'Reports are reviewed before they appear in public number checks. Do not include your PIN, password or one-time code.',
     category: 'Report category', chooseCategory: 'Choose a category', description: 'What happened?', descriptionHint: 'Share the message or call details, when it happened, and what they asked you to do. Do not include secret codes.',
     proof: 'Optional image proof', proofHelp: 'Image only. Up to 10 MB. Evidence is private and only accessible to administrators.',
@@ -73,15 +74,16 @@ const copy = {
     aboutTitle: 'A community signal, not a verdict', aboutCopy: 'UMUNARA helps people in Rwanda make better-informed choices when a call or message involves money. Reports are reviewed before they are used in public checks.',
     howTitle: 'How it works', howOne: 'Check a number', howOneCopy: 'Search against reports that moderators have approved.', howTwo: 'Share a report', howTwoCopy: 'Describe what happened. A moderator reviews it before publication.', howThree: 'Choose with care', howThreeCopy: 'A result is context, not a guarantee or a verdict about a person.',
     contact: 'Contact Us', privacy: 'Privacy', footer: 'A locally grounded service for safer telecom and money decisions.',
+    contactEmailLabel: 'Email', contactPhoneLabel: 'Phone / WhatsApp',
     loading: 'Loading…', retry: 'Try again', error: 'Something went wrong while loading this information.',
     admin: 'Moderation', adminTitle: 'Safety desk', overview: 'Overview', moderation: 'Reports', users: 'People', manageProviders: 'Providers',
     protected: 'Administrator access required', protectedCopy: 'Sign in with an authorized administrator account to view private moderation and service data.',
     totalReports: 'All reports', pendingReports: 'Awaiting review', approvedReports: 'Approved reports', reportedNumbers: 'Numbers reported', numberChecks: 'Number checks', registeredUsers: 'Registered users',
-    status: 'Status', searchReports: 'Search number or report text', allStatuses: 'All statuses', approve: 'Approve', stop: 'Stop', clean: 'Mark cleaned', delete: 'Delete',
+    status: 'Status', searchReports: 'Search number or report text', allStatuses: 'All statuses', approve: 'Approve', stop: 'Reject', clean: 'Mark cleaned', delete: 'Delete',
     noReports: 'No reports match these filters.', reportDetails: 'Report details', reporter: 'Reporter', evidence: 'Private evidence', noEvidence: 'No image evidence attached.',
     providerAdd: 'Add provider', providerEdit: 'Edit', providerName: 'Provider name', logoText: 'Short label', sourceUrl: 'Source URL', feeInfo: 'Fee information', speedInfo: 'Speed information', published: 'Published', save: 'Save provider', cancel: 'Cancel', noUsers: 'No registered users to display.',
     worksMomo: 'Works with MoMo', worksAirtel: 'Works with Airtel Money', worksBanks: 'Works with banks', source: 'Source', verifiedOn: 'Verified on',
-    lookup: 'Find a calling code', startCheck: 'Start a number check', removeFile: 'Remove image', count: 'Reports', actions: 'Actions', email: 'Email', created: 'Created', communitySignal: 'COMMUNITY SIGNAL', reviewDesk: 'UMUNARA REVIEW', maxBulk: 'Maximum 200 numbers per check.', addNumbers: 'Add at least one phone number.', privacyCopy: 'When you submit a report, the number and description may be shown in public only after moderator approval. Optional reporter contact and image proof are not shown on public report listings.', contactCopy: 'UMUNARA is a locally grounded community service. Contact details were not provided for this interface.',
+    lookup: 'Find a calling code', startCheck: 'Start a number check', removeFile: 'Remove image', count: 'Reports', actions: 'Actions', email: 'Email', created: 'Created', communitySignal: 'COMMUNITY SIGNAL', reviewDesk: 'UMUNARA REVIEW', maxBulk: 'Maximum 200 numbers per check.', addNumbers: 'Add at least one phone number.', privacyCopy: 'When you submit a report, the number and description may be shown in public only after moderator approval. Optional reporter contact and image proof are not shown on public report listings.', contactCopy: 'Questions about UMUNARA? Contact our team using the details below.',
   },
   rw: {
     made: 'Serivisi y’umutekano w’abaturage mu Rwanda', check: 'Genzura nimero', report: 'Tanga raporo y’uburiganya',
@@ -102,9 +104,10 @@ const copy = {
     tipTwoTitle: 'Bika PIN yawe', tipTwo: 'Umuyobozi w’ukuri ntazagusaba PIN ya Mobile Money cyangwa kode y’igihe gito.',
     tipThreeTitle: 'Ntukihutishe icyemezo', tipThree: 'Iyo bagusaba gukora ako kanya, banza uhagarare ugenzure amakuru ahandi.',
     tipFourTitle: 'Genzura ugiye guha amafaranga', tipFour: 'Emeza izina na nimero bigaragara kuri ecran mbere yo kwemeza kohereza.',
-    providerTitle: 'Abatanga serivisi zo kohereza amafaranga', providerLead: 'Reba uburyo bwo kohereza amafaranga. Amafaranga n’igihe ntibyemejwe keretse hari isoko ry’amakuru.',
+    providerTitle: 'Amabwiriza yo kohereza amafaranga', providerLead: 'Uburyo bwo gukoresha serivisi zisanzwe. Kuboneka, ikiguzi, ivunjisha n’igihe biterwa n’inzira; genzura igiciro kiriho.',
     worksWith: 'Ikorana na', momo: 'MoMo', airtel: 'Airtel Money', banks: 'Amabanki', fee: 'Amafaranga asabwa', speed: 'Umuvuduko',
     unverified: 'Ntibyemejwe — nta soko ry’amakuru', verified: 'Hari isoko ry’amakuru', noProviders: 'Nta batanga serivisi barashyirwa hano.',
+    stepsLabel: 'Intambwe', deliveryLabel: 'Igihe cyo kugera', warningLabel: 'Iburira ku buriganya', officialSite: 'Urubuga rwemewe', availabilityNote: 'UMUNARA ntigenanya ibiciro byo kohereza amafaranga. Banza ugenzure ikiguzi, ivunjisha, uburyo bwo kwakira n’igihe bigaragazwa muri porogaramu cyangwa ku rubuga byemewe mbere yo kohereza.',
     reportTitle: 'Tubwire ibyabaye', reportLead: 'Raporo zirasuzumwa mbere yo kugaragara mu igenzura rusange. Ntushyiremo PIN, ijambo ry’ibanga cyangwa kode y’igihe gito.',
     category: 'Icyiciro cya raporo', chooseCategory: 'Hitamo icyiciro', description: 'Byagenze bite?', descriptionHint: 'Vuga iby’ubutumwa cyangwa umuhamagaro, igihe byabereye n’icyo bagusabye. Ntushyiremo kode z’ibanga.',
     proof: 'Ifoto y’inyongera (si ngombwa)', proofHelp: 'Amafoto gusa, atarengeje 10 MB. Ifoto ibikwa mu ibanga, abagenzuzi ni bo bonyine bayigeraho.',
@@ -115,15 +118,16 @@ const copy = {
     aboutTitle: 'Amakuru y’abaturage, si urubanza', aboutCopy: 'UMUNARA ifasha abantu mu Rwanda gufata ibyemezo bishingiye ku makuru iyo telefoni cyangwa ubutumwa bireba amafaranga. Raporo zirasuzumwa mbere yo gukoreshwa.',
     howTitle: 'Uko bikora', howOne: 'Genzura nimero', howOneCopy: 'Shakisha raporo zemejwe n’abagenzuzi.', howTwo: 'Tanga raporo', howTwoCopy: 'Sobanura ibyabaye. Umugenzuzi arayisuzuma mbere yo kuyitangaza.', howThree: 'Fata icyemezo witonze', howThreeCopy: 'Ibisubizo bitanga amakuru, si isezerano cyangwa urubanza ku muntu.',
     contact: 'Twandikire', privacy: 'Ibanga', footer: 'Serivisi ishingiye ku Rwanda ifasha gufata ibyemezo byizewe kuri telefoni n’amafaranga.',
+    contactEmailLabel: 'Imeyili', contactPhoneLabel: 'Telefoni / WhatsApp',
     loading: 'Birimo gutegurwa…', retry: 'Ongera ugerageze', error: 'Habaye ikibazo mu kubona aya makuru.',
     admin: 'Ubugenzuzi', adminTitle: 'Ikigo cy’umutekano', overview: 'Incamake', moderation: 'Raporo', users: 'Abakoresha', manageProviders: 'Abatanga serivisi',
     protected: 'Abayobozi bonyine bemerewe', protectedCopy: 'Injira ukoresheje konti y’umuyobozi wemewe kugira ngo ubone raporo n’amakuru bwite.',
     totalReports: 'Raporo zose', pendingReports: 'Zitegereje kugenzurwa', approvedReports: 'Raporo zemejwe', reportedNumbers: 'Nimero zatangiwe raporo', numberChecks: 'Igenzura rya nimero', registeredUsers: 'Abakoresha biyandikishije',
-    status: 'Imiterere', searchReports: 'Shaka nimero cyangwa raporo', allStatuses: 'Imiterere yose', approve: 'Emeza', stop: 'Hagarika', clean: 'Shyira ko byakemutse', delete: 'Siba',
+    status: 'Imiterere', searchReports: 'Shaka nimero cyangwa raporo', allStatuses: 'Imiterere yose', approve: 'Emeza', stop: 'Anga', clean: 'Shyira ko byakemutse', delete: 'Siba',
     noReports: 'Nta raporo zihuye n’ibi byatoranyijwe.', reportDetails: 'Ibisobanuro bya raporo', reporter: 'Uwatanze raporo', evidence: 'Ifoto y’ibanga', noEvidence: 'Nta foto yatanzwe.',
     providerAdd: 'Ongeraho serivisi', providerEdit: 'Hindura', providerName: 'Izina rya serivisi', logoText: 'Izina rigufi', sourceUrl: 'Urubuga rw’isoko', feeInfo: 'Amakuru y’amafaranga', speedInfo: 'Amakuru y’igihe', published: 'Yashyizwe ahagaragara', save: 'Bika serivisi', cancel: 'Hagarika', noUsers: 'Nta bakoresha biyandikishije bagaragazwa.',
     worksMomo: 'Ikorana na MoMo', worksAirtel: 'Ikorana na Airtel Money', worksBanks: 'Ikorana n’amabanki', source: 'Isoko', verifiedOn: 'Yemejwe ku wa',
-    lookup: 'Shaka kode yo guhamagara', startCheck: 'Tangira igenzura', removeFile: 'Kuramo ifoto', count: 'Raporo', actions: 'Ibikorwa', email: 'Imeyili', created: 'Yaremwe', communitySignal: 'AMAKURU Y’ABATURAGE', reviewDesk: 'UMUNARA ISUZUMA', maxBulk: 'Nturenze nimero 200 mu igenzura rimwe.', addNumbers: 'Ongeramo nibura nimero imwe ya telefoni.', privacyCopy: 'Iyo utanze raporo, nimero n’ibisobanuro bishobora kugaragara ku mugaragaro ari uko byemejwe n’umugenzuzi. Nimero y’uwatanze raporo n’ifoto ntibigaragazwa ku rutonde rusange.', contactCopy: 'UMUNARA ni serivisi y’abaturage ishingiye ku Rwanda. Nta makuru y’aho twaboneka yatanzwe kuri iyi porogaramu.',
+    lookup: 'Shaka kode yo guhamagara', startCheck: 'Tangira igenzura', removeFile: 'Kuramo ifoto', count: 'Raporo', actions: 'Ibikorwa', email: 'Imeyili', created: 'Yaremwe', communitySignal: 'AMAKURU Y’ABATURAGE', reviewDesk: 'UMUNARA ISUZUMA', maxBulk: 'Nturenze nimero 200 mu igenzura rimwe.', addNumbers: 'Ongeramo nibura nimero imwe ya telefoni.', privacyCopy: 'Iyo utanze raporo, nimero n’ibisobanuro bishobora kugaragara ku mugaragaro ari uko byemejwe n’umugenzuzi. Nimero y’uwatanze raporo n’ifoto ntibigaragazwa ku rutonde rusange.', contactCopy: 'Ufite ikibazo kuri UMUNARA? Twandikire ukoresheje amakuru ari hano hepfo.',
   },
   fr: {
     made: 'Un service de sécurité communautaire pour le Rwanda', check: 'Vérifier un numéro', report: 'Signaler une arnaque',
@@ -144,9 +148,10 @@ const copy = {
     tipTwoTitle: 'Gardez votre code PIN privé', tipTwo: 'Un vrai fournisseur ne vous demandera jamais votre code PIN Mobile Money ni un code à usage unique.',
     tipThreeTitle: 'Méfiez-vous de l’urgence', tipThree: 'Une pression pour agir immédiatement est une raison de faire une pause et de vérifier.',
     tipFourTitle: 'Vérifiez le destinataire', tipFour: 'Confirmez le nom et le numéro affichés avant de valider le transfert.',
-    providerTitle: 'Répertoire des fournisseurs de transfert', providerLead: 'Comparez les moyens disponibles. Les frais et délais restent non vérifiés sans source indiquée.',
+    providerTitle: 'Guide des transferts d’argent', providerLead: 'Des étapes pratiques pour les services courants. Disponibilité, frais, taux de change et délais dépendent du trajet ; vérifiez le devis actuel.',
     worksWith: 'Compatible avec', momo: 'MoMo', airtel: 'Airtel Money', banks: 'Banques', fee: 'Frais', speed: 'Délai',
     unverified: 'Non vérifié — aucune source indiquée', verified: 'Source fournie', noProviders: 'Aucun fournisseur répertorié pour le moment.',
+    stepsLabel: 'Étapes', deliveryLabel: 'Délai de réception', warningLabel: 'Alerte aux arnaques', officialSite: 'Site officiel', availabilityNote: 'UMUNARA ne fixe pas les prix des transferts. Vérifiez toujours les frais, le taux de change, les modes de réception et le délai estimé dans l’application ou sur le site officiel avant d’envoyer.',
     reportTitle: 'Racontez-nous ce qui s’est passé', reportLead: 'Les signalements sont examinés avant d’apparaître dans les recherches publiques. N’indiquez jamais votre code PIN, mot de passe ou code temporaire.',
     category: 'Catégorie', chooseCategory: 'Choisir une catégorie', description: 'Que s’est-il passé ?', descriptionHint: 'Décrivez le message ou l’appel, sa date et ce qui vous a été demandé. N’incluez aucun code secret.',
     proof: 'Image justificative facultative', proofHelp: 'Image uniquement, jusqu’à 10 Mo. Les preuves sont privées et accessibles uniquement aux administrateurs.',
@@ -157,15 +162,16 @@ const copy = {
     aboutTitle: 'Un signal communautaire, pas un verdict', aboutCopy: 'UMUNARA aide les habitants du Rwanda à prendre des décisions mieux informées lorsqu’un appel ou un message concerne de l’argent. Les signalements sont examinés avant utilisation.',
     howTitle: 'Comment ça marche', howOne: 'Vérifiez un numéro', howOneCopy: 'Recherchez les signalements approuvés par les modérateurs.', howTwo: 'Partagez un signalement', howTwoCopy: 'Décrivez les faits. Un modérateur l’examine avant publication.', howThree: 'Décidez avec prudence', howThreeCopy: 'Un résultat fournit du contexte, pas une garantie ni un verdict sur une personne.',
     contact: 'Nous contacter', privacy: 'Confidentialité', footer: 'Un service local pour des décisions plus sûres concernant les télécoms et l’argent.',
+    contactEmailLabel: 'E-mail', contactPhoneLabel: 'Téléphone / WhatsApp',
     loading: 'Chargement…', retry: 'Réessayer', error: 'Une erreur est survenue lors du chargement.',
     admin: 'Modération', adminTitle: 'Espace sécurité', overview: 'Vue d’ensemble', moderation: 'Signalements', users: 'Personnes', manageProviders: 'Fournisseurs',
     protected: 'Accès administrateur requis', protectedCopy: 'Connectez-vous avec un compte administrateur autorisé pour consulter les données privées.',
     totalReports: 'Tous les signalements', pendingReports: 'En attente', approvedReports: 'Approuvés', reportedNumbers: 'Numéros signalés', numberChecks: 'Vérifications', registeredUsers: 'Utilisateurs inscrits',
-    status: 'Statut', searchReports: 'Rechercher un numéro ou un texte', allStatuses: 'Tous les statuts', approve: 'Approuver', stop: 'Arrêter', clean: 'Marquer résolu', delete: 'Supprimer',
+    status: 'Statut', searchReports: 'Rechercher un numéro ou un texte', allStatuses: 'Tous les statuts', approve: 'Approuver', stop: 'Rejeter', clean: 'Marquer résolu', delete: 'Supprimer',
     noReports: 'Aucun signalement ne correspond aux filtres.', reportDetails: 'Détails du signalement', reporter: 'Auteur', evidence: 'Preuve privée', noEvidence: 'Aucune image jointe.',
     providerAdd: 'Ajouter un fournisseur', providerEdit: 'Modifier', providerName: 'Nom du fournisseur', logoText: 'Libellé court', sourceUrl: 'URL de la source', feeInfo: 'Informations sur les frais', speedInfo: 'Informations sur le délai', published: 'Publié', save: 'Enregistrer', cancel: 'Annuler', noUsers: 'Aucun utilisateur inscrit à afficher.',
     worksMomo: 'Compatible avec MoMo', worksAirtel: 'Compatible avec Airtel Money', worksBanks: 'Compatible avec les banques', source: 'Source', verifiedOn: 'Vérifié le',
-    lookup: 'Trouver un indicatif', startCheck: 'Vérifier un numéro', removeFile: 'Retirer l’image', count: 'Signalements', actions: 'Actions', email: 'E-mail', created: 'Créé', communitySignal: 'SIGNALEMENT COMMUNAUTAIRE', reviewDesk: 'EXAMEN UMUNARA', maxBulk: 'Maximum 200 numéros par vérification.', addNumbers: 'Ajoutez au moins un numéro de téléphone.', privacyCopy: 'Lorsqu’un signalement est envoyé, le numéro et la description peuvent être affichés publiquement après approbation d’un modérateur. Les coordonnées facultatives et les preuves ne figurent pas sur les listes publiques.', contactCopy: 'UMUNARA est un service communautaire ancré au Rwanda. Aucune coordonnée de contact n’a été fournie pour cette interface.',
+    lookup: 'Trouver un indicatif', startCheck: 'Vérifier un numéro', removeFile: 'Retirer l’image', count: 'Signalements', actions: 'Actions', email: 'E-mail', created: 'Créé', communitySignal: 'SIGNALEMENT COMMUNAUTAIRE', reviewDesk: 'EXAMEN UMUNARA', maxBulk: 'Maximum 200 numéros par vérification.', addNumbers: 'Ajoutez au moins un numéro de téléphone.', privacyCopy: 'Lorsqu’un signalement est envoyé, le numéro et la description peuvent être affichés publiquement après approbation d’un modérateur. Les coordonnées facultatives et les preuves ne figurent pas sur les listes publiques.', contactCopy: 'Une question sur UMUNARA ? Contactez notre équipe avec les coordonnées ci-dessous.',
   },
 } as const;
 
@@ -191,12 +197,13 @@ const categories = Object.keys(categoryLabels) as ReportCategory[];
 const statusLabels: Record<string, Record<Language, string>> = {
   pending: { en: 'Pending', rw: 'Itegereje', fr: 'En attente' },
   approved: { en: 'Approved', rw: 'Yemejwe', fr: 'Approuvé' },
+  rejected: { en: 'Rejected', rw: 'Yanzwe', fr: 'Rejeté' },
   stopped: { en: 'Stopped', rw: 'Yahagaritswe', fr: 'Arrêté' },
   cleaned: { en: 'Cleaned', rw: 'Byakemutse', fr: 'Résolu' },
   deleted: { en: 'Deleted', rw: 'Yasibwe', fr: 'Supprimé' },
 };
 const callCodes: Array<{ value: ReportStatus; label: string }> = [
-  { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'stopped', label: 'Stopped' }, { value: 'cleaned', label: 'Cleaned' }, { value: 'deleted', label: 'Deleted' },
+  { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }, { value: 'stopped', label: 'Stopped' }, { value: 'cleaned', label: 'Cleaned' }, { value: 'deleted', label: 'Deleted' },
 ];
 
 function AppShell() {
@@ -233,7 +240,6 @@ function Home({ language, setLanguage, mobileOpen, setMobileOpen, t, auth }: { l
   const submitMutation = useSubmitSafetyReport();
   const uploadMutation = useRequestUploadUrl();
   const recent = useListRecentReports({ limit: 8 });
-  const providers = useListTransferProviders();
   const shownCountries = useMemo(() => countries.filter((item) => `${item.name} ${item.rw} ${item.fr} ${item.code}`.toLowerCase().includes(countryQuery.toLowerCase())), [countryQuery]);
   const go = (id: string) => {
     setMobileOpen(false);
@@ -291,7 +297,7 @@ function Home({ language, setLanguage, mobileOpen, setMobileOpen, t, auth }: { l
         <select className="u-lang" aria-label="Choose language" value={language} onChange={(e) => setLanguage(e.target.value as Language)} data-testid="select-language"><option value="en">EN</option><option value="rw">RW</option><option value="fr">FR</option></select>
         {auth.isLoading ? <span className="u-auth" aria-label={t('loading')}>{t('loading')}</span> : auth.isAuthenticated
           ? <button className="u-auth" onClick={auth.logout} data-testid="button-sign-out">{t('signOut')}</button>
-          : <button className="u-auth" onClick={auth.login} data-testid="button-sign-in">{t('signIn')}</button>}
+          : <button className="u-auth" onClick={() => auth.login()} data-testid="button-sign-in">{t('signIn')}</button>}
         <button className="u-mobile-nav-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} data-testid="button-mobile-menu">{mobileOpen ? <X size={18} /> : <Menu size={18} />}</button>
       </div>
       <nav className={`u-mobile-menu ${mobileOpen ? 'open' : ''}`} aria-label="Mobile navigation">{navItems.map(([label, id]) => <button key={id} onClick={() => go(id)} data-testid={`mobile-nav-${id}`}>{t(label)}<ArrowRight size={14} /></button>)}<button onClick={() => go('about')}>{t('about')}</button></nav>
@@ -340,7 +346,15 @@ function Home({ language, setLanguage, mobileOpen, setMobileOpen, t, auth }: { l
 
     <section className="u-section u-container" id="providers" data-testid="section-providers">
       <div className="u-section-head"><div><div className="u-eyebrow">{t('providers')}</div><h2 className="u-section-title">{t('providerTitle')}</h2></div><p className="u-lead">{t('providerLead')}</p></div>
-      {providers.isLoading ? <div className="u-panel"><div className="u-skeleton" /><div className="u-skeleton" /></div> : providers.isError ? <InlineError text={t('error')} retry={() => providers.refetch()} retryText={t('retry')} /> : !providers.data?.length ? <div className="u-empty" data-testid="empty-providers">{t('noProviders')}</div> : <div className="u-provider-list" data-testid="list-providers">{providers.data.filter((p) => p.published).map((p) => <ProviderRow key={p.id} provider={p} t={t} />)}</div>}
+      <div className="u-transfer-grid" data-testid="list-providers">{transferGuide.map((provider) => <article className="u-transfer-card" key={provider.id} data-testid={`card-provider-${provider.id}`}>
+        <div className="u-transfer-head"><span className={`u-provider-logo brand-${provider.id}`}>{provider.shortName}</span><div><h3>{provider.name}</h3><p>{provider.channel[language]}</p></div></div>
+        <div className="u-transfer-steps"><h4>{t('stepsLabel')}</h4><ol>{provider.steps[language].map((step, index) => <li key={index}>{step}</li>)}</ol></div>
+        <div className="u-transfer-detail"><h4>{t('fee')}</h4><p>{provider.fees[language]}</p></div>
+        <div className="u-transfer-detail"><h4>{t('deliveryLabel')}</h4><p>{provider.delivery[language]}</p></div>
+        <div className="u-transfer-warning"><h4><ShieldCheck size={14} />{t('warningLabel')}</h4><p>{provider.warning[language]}</p></div>
+        <a className="u-transfer-link" href={provider.officialUrl} target="_blank" rel="noreferrer">{t('officialSite')}<ArrowRight size={14} /></a>
+      </article>)}</div>
+      <p className="u-transfer-availability">{t('availabilityNote')}</p>
     </section>
 
     <section className="u-section alt" id="tips" data-testid="section-safety-tips"><div className="u-container u-tip-grid">
@@ -372,7 +386,8 @@ function Home({ language, setLanguage, mobileOpen, setMobileOpen, t, auth }: { l
     <section className="u-section u-container" id="how" data-testid="section-how-it-works"><div className="u-section-head"><div><div className="u-eyebrow">{t('how')}</div><h2 className="u-section-title">{t('howTitle')}</h2></div></div><div className="u-info-grid">{[1, 2, 3].map((n) => <article className="u-info" key={n}><span className="num">0{n}</span><h3>{t(`how${['One', 'Two', 'Three'][n - 1]}` as CopyKey)}</h3><p>{t(`how${['One', 'Two', 'Three'][n - 1]}Copy` as CopyKey)}</p></article>)}</div></section>
     <section className="u-section dark" id="about" data-testid="section-about"><div className="u-container"><div className="u-eyebrow light">{t('about')}</div><h2 className="u-section-title">{t('aboutTitle')}</h2><p className="u-lead" style={{ color: '#d1ddd1', marginTop: 16, maxWidth: 750 }}>{t('aboutCopy')}</p></div></section>
     <section className="u-section u-container" id="privacy" data-testid="section-privacy"><div className="u-eyebrow">{t('privacy')}</div><h2 className="u-section-title">{t('privacy')}</h2><p className="u-lead" style={{ marginTop: 15, maxWidth: 760 }}>{t('privacyCopy')}</p></section>
-    <footer className="u-footer" id="contact" data-testid="footer-main"><div className="u-container"><div className="u-footer-grid"><div><Brand /><p>{t('footer')}</p></div><div><h3>{t('how')}</h3><button onClick={() => go('check')}>{t('check')}</button><button onClick={() => go('report')}>{t('report')}</button><button onClick={() => go('providers')}>{t('providers')}</button></div><div><h3>UMUNARA</h3><a href="#about">{t('about')}</a><a href="#how">{t('how')}</a><a href="#privacy">{t('privacy')}</a><a href="#contact">{t('contact')}</a><a href="/admin">{t('admin')}</a></div></div><div className="u-footer-bottom"><span>© UMUNARA · RWANDA</span><span>{t('privacy')} · EN / RW / FR</span></div></div></footer>
+    <section className="u-section alt" id="contact" data-testid="section-contact"><div className="u-container u-contact-layout"><div><div className="u-eyebrow">{t('contact')}</div><h2 className="u-section-title">{t('contact')}</h2><p className="u-lead">{t('contactCopy')}</p></div><div className="u-contact-cards"><a href="mailto:nizeyibron@gmail.com"><span>{t('contactEmailLabel')}</span><strong>nizeyibron@gmail.com</strong></a><a href="tel:+250788864466"><span>{t('contactPhoneLabel')}</span><strong>0788864466</strong></a><a href="https://wa.me/250788864466" target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>0788864466</strong></a></div></div></section>
+    <footer className="u-footer" id="footer-main" data-testid="footer-main"><div className="u-container"><div className="u-footer-grid"><div><Brand /><p>{t('footer')}</p></div><div><h3>{t('how')}</h3><button onClick={() => go('check')}>{t('check')}</button><button onClick={() => go('report')}>{t('report')}</button><button onClick={() => go('providers')}>{t('providers')}</button></div><div><h3>{t('contact')}</h3><a href="mailto:nizeyibron@gmail.com">nizeyibron@gmail.com</a><a href="tel:+250788864466">0788864466</a><a href="https://wa.me/250788864466" target="_blank" rel="noreferrer">WhatsApp · 0788864466</a><a href="#about">{t('about')}</a><a href="#privacy">{t('privacy')}</a><a href="/admin">{t('admin')}</a></div></div><div className="u-footer-bottom"><span>© UMUNARA · RWANDA</span><span>{t('privacy')} · EN / RW / FR</span></div></div></footer>
   </main>;
 }
 
@@ -433,10 +448,10 @@ function Admin({ language, t, auth }: { language: Language; t: Translator; auth:
   };
   const isLoading = auth.isLoading;
   return <main className="umunara u-admin">
-    <div className="u-admin-top"><div className="u-container u-admin-head"><Brand /><div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><a href="/" style={{ color: '#f2e9ce', fontSize: 11, textDecoration: 'none' }} data-testid="link-public-home">UMUNARA public hub</a>{auth.isAuthenticated && <button className="u-btn gold" onClick={auth.logout} data-testid="button-admin-logout">{t('signOut')}</button>}</div></div></div>
+    <div className="u-admin-top"><div className="u-container u-admin-head"><Brand /><div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><a href="/" style={{ color: '#f2e9ce', fontSize: 11, textDecoration: 'none' }} data-testid="link-public-home">UMUNARA public hub</a>{auth.isAuthenticated && <><span className="u-admin-account">{auth.user?.email}</span><button className="u-btn gold" onClick={auth.logout} data-testid="button-admin-logout">{t('signOut')}</button></>}</div></div></div>
     <div className="u-container u-admin-main">
       <div className="u-eyebrow">{t('admin')}</div><h1>{t('adminTitle')}</h1>
-      {isLoading ? <><div className="u-skeleton" /><div className="u-skeleton" /></> : !auth.isAuthenticated ? <div className="u-panel" style={{ maxWidth: 650 }} data-testid="admin-protected"><div className="u-result-icon"><LockKeyhole size={19} /></div><h2 style={{ font: "700 21px 'Manrope',sans-serif" }}>{t('protected')}</h2><p className="u-lead">{t('protectedCopy')}</p><button className="u-btn" style={{ marginTop: 18 }} onClick={auth.login} data-testid="button-admin-sign-in">{t('signIn')}<ArrowRight size={15} /></button></div> : <>
+      {isLoading ? <><div className="u-skeleton" /><div className="u-skeleton" /></> : !auth.isAuthenticated ? <div className="u-panel" style={{ maxWidth: 650 }} data-testid="admin-protected"><div className="u-result-icon"><LockKeyhole size={19} /></div><h2 style={{ font: "700 21px 'Manrope',sans-serif" }}>{t('protected')}</h2><p className="u-lead">{t('protectedCopy')}</p><button className="u-btn" style={{ marginTop: 18 }} onClick={() => auth.login('/admin')} data-testid="button-admin-sign-in">{t('signIn')}<ArrowRight size={15} /></button></div> : <>
         {summary.isError ? <InlineError text={t('error')} retry={() => summary.refetch()} retryText={t('retry')} /> : summary.isLoading ? <div className="u-stat-grid">{[0, 1, 2, 3, 4, 5].map((i) => <div className="u-skeleton" key={i} />)}</div> : summary.data && <div className="u-stat-grid" data-testid="admin-summary">{[
           [t('totalReports'), summary.data.totalReports], [t('pendingReports'), summary.data.pendingReports], [t('approvedReports'), summary.data.approvedReports], [t('reportedNumbers'), summary.data.reportedNumbers], [t('numberChecks'), summary.data.numberChecks], [t('registeredUsers'), summary.data.registeredUsers],
         ].map(([label, value]) => <article className="u-stat" key={String(label)}><b>{value}</b><span>{label}</span></article>)}</div>}
@@ -456,7 +471,7 @@ function Admin({ language, t, auth }: { language: Language; t: Translator; auth:
 }
 
 function AdminReportRow({ report, language, t, onStatus, pending }: { report: AdminReport; language: Language; t: Translator; onStatus: (status: ReportStatus) => void; pending: boolean }) {
-  const statusOptions: Array<{ value: ReportStatus; label: CopyKey }> = [{ value: 'approved', label: 'approve' }, { value: 'stopped', label: 'stop' }, { value: 'cleaned', label: 'clean' }, { value: 'deleted', label: 'delete' }];
+  const statusOptions: Array<{ value: ReportStatus; label: CopyKey }> = [{ value: 'approved', label: 'approve' }, { value: 'rejected', label: 'stop' }, { value: 'cleaned', label: 'clean' }, { value: 'deleted', label: 'delete' }];
   return <tr data-testid={`row-admin-report-${report.id}`}>
     <td data-label={t('phone')}><strong>{report.phoneNumber}</strong><br /><small>{new Date(report.createdAt).toLocaleString(language)}</small></td>
     <td data-label={t('category')}>{categoryLabels[report.category][language]}</td>

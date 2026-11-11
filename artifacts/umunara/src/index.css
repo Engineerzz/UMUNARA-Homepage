@@ -783,3 +783,39 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     inset: -1px;
   }
 }
+
+.u-transfer-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px; }
+.u-transfer-card { display:flex;flex-direction:column;gap:15px;min-width:0;padding:20px;background:#fbfaf5;border:1px solid #e1ddcf;box-shadow:0 8px 24px rgba(29,57,42,.035); }
+.u-transfer-head { display:flex;align-items:center;gap:12px;min-height:48px; }
+.u-transfer-head h3 { margin:0 0 4px;font:700 16px 'Manrope',sans-serif;color:#1b4935; }
+.u-transfer-head p { margin:0;color:#78837a;font-size:10px;line-height:1.5; }
+.u-transfer-head .u-provider-logo { flex:none;width:44px;height:44px;font-size:10px; }
+.brand-mtn-momo { background:#e8f2e8;color:#217343; }
+.brand-airtel-money { background:#f6e5e4;color:#bb3133; }
+.brand-western-union { background:#f7edcf;color:#6d5311; }
+.brand-moneygram { background:#f8e4e0;color:#ae3530; }
+.brand-ria { background:#e8e7f4;color:#4d478a; }
+.brand-worldremit { background:#e2ebf5;color:#37628c; }
+.u-transfer-steps h4,.u-transfer-detail h4,.u-transfer-warning h4 { display:flex;align-items:center;gap:6px;margin:0 0 6px;color:#987a2e;font:700 9px 'DM Sans',sans-serif;letter-spacing:.11em;text-transform:uppercase; }
+.u-transfer-steps ol { display:grid;gap:7px;margin:0;padding-left:20px;color:#53645a;font-size:10px;line-height:1.6; }
+.u-transfer-steps li { padding-left:2px; }
+.u-transfer-detail { padding-top:10px;border-top:1px solid #e8e3d7; }
+.u-transfer-detail p,.u-transfer-warning p { margin:0;color:#69776e;font-size:10px;line-height:1.6; }
+.u-transfer-warning { padding:11px 12px;background:#f5efe0;border-left:2px solid #d1ae4b; }
+.u-transfer-warning h4 { color:#8c6421; }
+.u-transfer-link { display:flex;align-items:center;gap:7px;margin-top:auto;color:#315d43;font-size:10px;font-weight:700;text-decoration:none; }
+.u-transfer-link:hover { color:#9a7926; }
+.u-transfer-availability { max-width:850px;margin:15px 0 0;color:#758177;font-size:10px;line-height:1.65; }
+.u-contact-layout { display:grid;grid-template-columns:.8fr 1.2fr;gap:26px;align-items:center; }
+.u-contact-cards { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+.u-contact-cards a { display:flex;flex-direction:column;gap:7px;min-width:0;padding:16px;background:#fbfaf5;border:1px solid #e3dfd3;color:#244a38;text-decoration:none; }
+.u-contact-cards a:hover { border-color:#b89b4a; }
+.u-contact-cards span { color:#8c7b4e;font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase; }
+.u-contact-cards strong { overflow-wrap:anywhere;font:700 11px 'Manrope',sans-serif; }
+.u-admin-account { color:#dce5d9;font-size:10px; }
+@media (max-width:720px) {
+  .u-transfer-grid { grid-template-columns:1fr; }
+  .u-contact-layout { grid-template-columns:1fr; }
+  .u-contact-cards { grid-template-columns:1fr; }
+  .u-admin-account { display:none; }
+}

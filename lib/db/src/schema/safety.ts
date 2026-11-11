@@ -23,6 +23,7 @@ export const reportCategoryEnum = pgEnum("report_category", [
 export const reportStatusEnum = pgEnum("report_status", [
   "pending",
   "approved",
+  "rejected",
   "stopped",
   "cleaned",
   "deleted",

@@ -201,7 +201,7 @@ export const SubmitSafetyReportBody = zod.object({
 
 export const SubmitSafetyReportResponse = zod.object({
   "id": zod.number().int(),
-  "status": zod.enum(['pending', 'approved', 'stopped', 'cleaned', 'deleted']),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']),
   "message": zod.string()
 })
 
@@ -299,7 +299,7 @@ export const listAdminReportsQuerySearchMax = 100;
 
 
 export const ListAdminReportsQueryParams = zod.object({
-  "status": zod.enum(['pending', 'approved', 'stopped', 'cleaned', 'deleted']).optional(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']).optional(),
   "search": zod.coerce.string().max(listAdminReportsQuerySearchMax).optional()
 })
 
@@ -311,7 +311,7 @@ export const ListAdminReportsResponseItem = zod.object({
   "evidenceObjectPath": zod.string().nullable(),
   "reporterPhone": zod.string().nullable(),
   "reporterEmail": zod.string().nullable(),
-  "status": zod.enum(['pending', 'approved', 'stopped', 'cleaned', 'deleted']),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']),
   "createdAt": zod.coerce.date()
 })
 export const ListAdminReportsResponse = zod.array(ListAdminReportsResponseItem)
@@ -325,7 +325,7 @@ export const UpdateReportStatusParams = zod.object({
 })
 
 export const UpdateReportStatusBody = zod.object({
-  "status": zod.enum(['pending', 'approved', 'stopped', 'cleaned', 'deleted'])
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted'])
 })
 
 export const UpdateReportStatusResponse = zod.object({
@@ -336,7 +336,7 @@ export const UpdateReportStatusResponse = zod.object({
   "evidenceObjectPath": zod.string().nullable(),
   "reporterPhone": zod.string().nullable(),
   "reporterEmail": zod.string().nullable(),
-  "status": zod.enum(['pending', 'approved', 'stopped', 'cleaned', 'deleted']),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']),
   "createdAt": zod.coerce.date()
 })
 

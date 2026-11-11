@@ -572,7 +572,7 @@ components:
         - other
     ReportStatus:
       type: string
-      enum: [pending, approved, stopped, cleaned, deleted]
+      enum: [pending, approved, rejected, stopped, cleaned, deleted]
     ReportStatusUpdate:
       type: object
       properties:

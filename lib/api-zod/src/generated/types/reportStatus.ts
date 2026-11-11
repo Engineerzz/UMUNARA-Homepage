@@ -12,6 +12,7 @@ export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
 export const ReportStatus = {
   pending: 'pending',
   approved: 'approved',
+  rejected: 'rejected',
   stopped: 'stopped',
   cleaned: 'cleaned',
   deleted: 'deleted',
