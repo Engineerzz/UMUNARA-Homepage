@@ -199,10 +199,34 @@ export const SubmitSafetyReportBody = zod.object({
   "reporterPhone": zod.string().max(submitSafetyReportBodyReporterPhoneMax).nullish()
 })
 
+export const submitSafetyReportResponseTrackingTokenMin = 40;
+export const submitSafetyReportResponseTrackingTokenMax = 64;
+
+
+
 export const SubmitSafetyReportResponse = zod.object({
   "id": zod.number().int(),
   "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']),
-  "message": zod.string()
+  "message": zod.string(),
+  "trackingToken": zod.string().min(submitSafetyReportResponseTrackingTokenMin).max(submitSafetyReportResponseTrackingTokenMax)
+})
+
+
+/**
+ * @summary Check the status of a submitted report
+ */
+export const getSafetyReportStatusBodyTrackingTokenMin = 40;
+export const getSafetyReportStatusBodyTrackingTokenMax = 64;
+
+
+
+export const GetSafetyReportStatusBody = zod.object({
+  "trackingToken": zod.string().min(getSafetyReportStatusBodyTrackingTokenMin).max(getSafetyReportStatusBodyTrackingTokenMax)
+})
+
+export const GetSafetyReportStatusResponse = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected', 'stopped', 'cleaned', 'deleted']),
+  "updatedAt": zod.coerce.date()
 })
 
 

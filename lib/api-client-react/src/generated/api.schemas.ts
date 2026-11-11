@@ -145,6 +145,24 @@ export interface SafetyReportSubmission {
   id: number;
   status: ReportStatus;
   message: string;
+  /**
+     * @minLength 40
+     * @maxLength 64
+     */
+  trackingToken: string;
+}
+
+export interface SafetyReportStatusLookup {
+  /**
+     * @minLength 40
+     * @maxLength 64
+     */
+  trackingToken: string;
+}
+
+export interface SafetyReportStatusResponse {
+  status: ReportStatus;
+  updatedAt: string;
 }
 
 export type PublicReportStatus = typeof PublicReportStatus[keyof typeof PublicReportStatus];

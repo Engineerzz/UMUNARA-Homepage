@@ -7,6 +7,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./auth";
@@ -41,6 +42,7 @@ export const safetyReportsTable = pgTable(
     reporterId: varchar("reporter_id").references(() => usersTable.id, {
       onDelete: "set null",
     }),
+    statusTokenHash: varchar("status_token_hash", { length: 64 }),
     status: reportStatusEnum("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -53,6 +55,7 @@ export const safetyReportsTable = pgTable(
   (table) => [
     index("safety_reports_phone_status_idx").on(table.phoneNumber, table.status),
     index("safety_reports_created_at_idx").on(table.createdAt),
+    uniqueIndex("safety_reports_status_token_hash_uidx").on(table.statusTokenHash),
   ],
 );
 

@@ -33,6 +33,8 @@ export * from './reportCategory';
 export * from './reportStatus';
 export * from './reportStatusUpdate';
 export * from './safetyReportInput';
+export * from './safetyReportStatusLookup';
+export * from './safetyReportStatusResponse';
 export * from './safetyReportSubmission';
 export * from './transferProvider';
 export * from './transferProviderInput';

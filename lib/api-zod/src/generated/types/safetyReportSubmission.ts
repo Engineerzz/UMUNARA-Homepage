@@ -11,4 +11,9 @@ export interface SafetyReportSubmission {
   id: number;
   status: ReportStatus;
   message: string;
+  /**
+     * @minLength 40
+     * @maxLength 64
+     */
+  trackingToken: string;
 }

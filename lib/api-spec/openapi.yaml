@@ -247,6 +247,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /safety/report-status:
+    post:
+      tags: [Safety]
+      operationId: getSafetyReportStatus
+      summary: Check the status of a submitted report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafetyReportStatusLookup"
+      responses:
+        "200":
+          description: Current status of the submitted report.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetyReportStatusResponse"
+        "400":
+          description: Invalid report status request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: The report status token was not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /safety/providers:
     get:
       tags: [Safety]
@@ -653,7 +683,28 @@ components:
           $ref: "#/components/schemas/ReportStatus"
         message:
           type: string
-      required: [id, status, message]
+        trackingToken:
+          type: string
+          minLength: 40
+          maxLength: 64
+      required: [id, status, message, trackingToken]
+    SafetyReportStatusLookup:
+      type: object
+      properties:
+        trackingToken:
+          type: string
+          minLength: 40
+          maxLength: 64
+      required: [trackingToken]
+    SafetyReportStatusResponse:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ReportStatus"
+        updatedAt:
+          type: string
+          format: date-time
+      required: [status, updatedAt]
     PublicReport:
       type: object
       properties:
