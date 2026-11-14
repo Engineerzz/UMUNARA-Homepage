@@ -1,24 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>UMUNARA</title>
-    <meta name="description" content="UMUNARA — built on Replit. Update this description to reflect the app." />
-    <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="UMUNARA" />
-    <meta property="og:description" content="UMUNARA — built on Replit. Update this description to reflect the app." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="UMUNARA" />
-    <meta name="twitter:description" content="UMUNARA — built on Replit. Update this description to reflect the app." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMUNARA - Check Scammer in Rwanda</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:16px}
+.card{max-width:520px;margin:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+h1{margin:0;font-size:26px}h1 span{color:#2563eb}
+p{color:#555}.tabs{display:flex;gap:8px;margin:14px 0}
+.tabs button{flex:1;padding:12px;border:0;border-radius:10px;background:#eef2ff;font-weight:700;cursor:pointer}
+.tabs button.active{background:#2563eb;color:#fff}
+input,textarea,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;box-sizing:border-box;font-size:16px}
+.btn{width:100%;padding:14px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+.btn.green{background:#16a34a}.btn.dark{background:#111827}
+.result{margin-top:14px;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;white-space:pre-wrap}
+.safe{border-color:#16a34a;background:#f0fdf4}.warn{border-color:#f59e0b;background:#fffbeb}.danger{border-color:#ef4444;background:#fef2f2}
+small{color:#777}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>UMUNARA <span>🇷🇼</span></h1>
+<p>Check if a phone number / MoMo number is reported as a scammer in Rwanda before you send money.</p>
+
+<div class="tabs">
+<button id="t-check" class="active" onclick="show('check')">Check Number</button>
+<button id="t-report" onclick="show('report')">Report</button>
+<button id="t-admin" onclick="show('admin')">Admin</button>
+</div>
+
+<!-- CHECK -->
+<div id="view-check">
+<input id="checkPhone" placeholder="e.g. 0781234567 or 250781234567">
+<button class="btn" onclick="checkNumber()">Check Now — Free</button>
+<div id="checkResult" class="result" style="display:none"></div>
+<p><small>Rule: 0-1 report = Not confirmed • 2-4 reports = Suspicious ⚠️ • 5+ reports = Dangerous ❌ • If in whitelist = Safe ✅</small></p>
+</div>
+
+<!-- REPORT -->
+<div id="view-report" style="display:none">
+<input id="repPhone" placeholder="Scammer phone number">
+<input id="repName" placeholder="Your name (optional)">
+<select id="repType">
+<option>MoMo Fraud</option><option>Fake Job / Fake Tender</option><option>Fake Delivery</option><option>Impersonation</option><option>Other</option>
+</select>
+<textarea id="repDesc" placeholder="What happened? How much? When?"></textarea>
+<button class="btn green" onclick="reportNumber()">Submit Report</button>
+<div id="repResult" class="result" style="display:none"></div>
+</div>
+
+<!-- ADMIN -->
+<div id="view-admin" style="display:none">
+<input id="adminEmail" placeholder="Admin email" value="nizeyibron@gmail.com">
+<input id="adminPass" type="password" placeholder="Admin password">
+<button class="btn dark" onclick="adminLogin()">Login as Admin</button>
+<div id="adminResult" class="result" style="display:none"></div>
+<div id="adminPanel" style="display:none;margin-top:12px">
+<input id="whitePhone" placeholder="Whitelist phone to mark SAFE">
+<button class="btn green" onclick="addWhitelist()">Add to Whitelist ✅</button>
+<button class="btn" onclick="loadReports()" style="margin-top:8px">Load Latest Reports</button>
+<div id="adminList" class="result"></div>
+</div>
+</div>
+
+<p style="text-align:center"><small>UMUNARA • Made for Rwanda • Always verify before sending money</small></p>
+</div>
+
+<script>
+const SUPABASE_URL = "https://zameuhqxfhpiqcnwokb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_mq3oaAaAnMcLcYaLCML44Q_FmBh80Du";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function normalize(p){ p=(p||"").replace(/[^0-9]/g,""); if(p.startsWith("250")&&p.length==12) return p; if(p.startsWith("0")&&p.length==10) return "250"+p.slice(1); return p; }
+function show(v){
+  ["check","report","admin"].forEach(x=>{
+    document.getElementById("view-"+x).style.display = x===v?"block":"none";
+    document.getElementById("t-"+x).classList.toggle("active", x===v);
+  });
+}
+async function checkNumber(){
+  const phone = normalize(document.getElementById("checkPhone").value);
+  const el = document.getElementById("checkResult"); el.style.display="block";
+  if(phone.length!==12){ el.textContent="Please enter a valid Rwanda number like 0781234567"; return; }
+  el.textContent="Checking...";
+  const {data: white} = await supabase.from("whitelist").select("*").eq("phone", phone);
+  if(white && white.length>0){ el.className="result safe"; el.textContent="✅ SAFE — This number is in UMUNARA Whitelist.\nPhone: "+phone+"\nThis is a verified / trusted number."; return; }
+  const {data, error} = await supabase.from("reports").select("*").eq("phone", phone).order("created_at",{ascending:false});
+  if(error){ el.textContent="Error: "+error.message; return; }
+  const n = data.length;
+  if(n===0){ el.className="result safe"; el.textContent="✅ No reports yet.\nPhone: "+phone+"\n0 reports. Not confirmed as scammer, but stay careful."; }
+  else if(n>=5){ el.className="result danger"; el.textContent="❌ DANGEROUS — DO NOT SEND MONEY\nPhone: "+phone+"\nReports: "+n+" (5+)\nLast report: "+(data[0].description||data[0].type||"")+"\nThis number is highly reported."; }
+  else if(n>=2){ el.className="result warn"; el.textContent="⚠️ SUSPICIOUS — Be very careful\nPhone: "+phone+"\nReports: "+n+" (2-4)\nLast report: "+(data[0].description||data[0].type||"")+"\nDo not send money without verifying."; }
+  else { el.className="result warn"; el.textContent="⚠️ 1 Report — Not confirmed\nPhone: "+phone+"\nReports: 1\n"+(data[0].description||"")+"\nBe careful, ask for proof."; }
+}
+async function reportNumber(){
+  const phone = normalize(document.getElementById("repPhone").value);
+  const name = document.getElementById("repName").value;
+  const type = document.getElementById("repType").value;
+  const desc = document.getElementById("repDesc").value;
+  const el = document.getElementById("repResult"); el.style.display="block";
+  if(phone.length!==12){ el.textContent="Enter valid number"; return; }
+  if(!desc){ el.textContent="Please describe what happened"; return; }
+  el.textContent="Sending...";
+  const {error} = await supabase.from("reports").insert([{phone:phone, reporter_name:name, type:type, description:desc, status:"pending"}]);
+  if(error) el.textContent="Error: "+error.message;
+  else { el.className="result safe"; el.textContent="✅ Thank you! Report saved.\nPhone: "+phone+"\nOur rule will auto-update its status when it reaches 2 or 5 reports."; }
+}
+async function adminLogin(){
+  const email=document.getElementById("adminEmail").value;
+  const pass=document.getElementById("adminPass").value;
+  const el=document.getElementById("adminResult"); el.style.display="block"; el.textContent="Logging in...";
+  const {data, error} = await supabase.auth.signInWithPassword({email:email, password:pass});
+  if(error){ el.textContent="Login failed: "+error.message; return; }
+  el.textContent="✅ Welcome Admin!"; document.getElementById("adminPanel").style.display="block"; loadReports();
+}
+async function addWhitelist(){
+  const phone=normalize(document.getElementById("whitePhone").value);
+  if(phone.length!==12){ alert("Valid number"); return; }
+  const {error}=await supabase.from("whitelist").insert([{phone:phone, reason:"Verified by admin"}]);
+  if(error) alert("Error: "+error.message); else alert("✅ Added to whitelist: "+phone);
+}
+async function loadReports(){
+  const {data}=await supabase.from("reports").select("*").order("created_at",{ascending:false}).limit(20);
+  const el=document.getElementById("adminList");
+  if(!data||data.length===0){ el.textContent="No reports yet"; return; }
+  el.innerHTML = data.map(r=>`<b>${r.phone}</b> • ${r.type||""} • ${r.status||""}<br>${r.description||""}<br><small>${r.created_at||""}</small><hr>`).join("");
+}
+</script>
+</body>
+  </html>
