@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UMUNARA — Rwanda, Together</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -170,5 +170,10 @@ document.getElementById("menuToggle").onclick=function(){document.getElementById
 document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){var id=b.dataset.go;document.getElementById("mobileMenu").classList.remove("open");if(id==='contact'||id==='faq'){showHome();setTimeout(function(){document.getElementById(id).scrollIntoView({behavior:"smooth"})},50);return}var el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth"})}});
 setInterval(function(){ONLINE_USERS=Math.max(60,ONLINE_USERS+Math.floor(Math.random()*5)-2);document.getElementById("onlineCount").textContent=ONLINE_USERS;if(ONLINE_USERS>200)checkWarnings()},30000);
 applyLanguage();renderCountries();renderRecent();renderAdmin();renderWhite();runAutoRules();checkWarnings();
+  // --- UMUNARA Supabase Connection ---
+const SUPABASE_URL = "https://zameuhqxfhpiqcnwokb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_mq3oaAaAnMcLcYaLCML44Q_FmBh80Du";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+console.log("UMUNARA connected to Supabase");
 </script>
 </body></html>
